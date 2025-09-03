@@ -10,5 +10,6 @@ boolean existsByUsername(String username);
 boolean existsByEmail(String email);
 Optional<User> findByUsername(String username);
 Optional<User> findByEmail(String email);
+Optional<User> findByVerificationToken(String verification_token);
 //Optional<User> findByPassword(String passwordHash);
 }

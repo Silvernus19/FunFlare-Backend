@@ -43,7 +43,7 @@ public class User {
     @Column(name = "organization_name", length = 255)
     private String organizationName;
 
-    @Column(nullable = false)
+    @Column(name = "verified" ,nullable = false)
     private Boolean verified = false;
 
     @Column(name = "created_at", nullable = false,
@@ -56,6 +56,9 @@ public class User {
 
     @Column(name = "last_login")
     private OffsetDateTime lastLogin;
+
+    @Column(name = "verification_token",  length = 255)
+    private String verificationToken;
 
 //    default constructor
     public User() {}
@@ -163,7 +166,17 @@ public class User {
         return lastLogin;
     }
 
+    public String getVerificationToken() {
+        return verificationToken;
+    }
+
+    public void setVerificationToken(String verificationToken) {
+        this.verificationToken = verificationToken;
+    }
+
     public void setLastLogin(OffsetDateTime lastLogin) {
         this.lastLogin = lastLogin;
+
+
     }
 }

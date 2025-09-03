@@ -8,9 +8,14 @@ import com.funflare.funflare.repository.UserRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,11 +23,15 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
 
 @Service
 public class LoginService {
+
+
+    private static final Logger logger = LoggerFactory.getLogger(LoginService.class);
 
     private UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -49,10 +58,29 @@ public class LoginService {
                 .or(() -> userRepository.findByUsername(request.getEmail()))
                 .orElseThrow(() -> new BadCredentialsException("invalid credentials"));
 
+        logger.debug("User {} verified status: {}", user.getEmail(), user.getVerified());
+        // Check if user is verified
+        if (user.getVerified() == null || !user.getVerified()) {
+            throw new BadCredentialsException("Account not verified. Please check your email to verify your account.");
+        }
+
+
+//        set authentication context
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                user.getEmail(),
+                null,
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+
+//
+
 //        verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BadCredentialsException("invalid credentials");
         }
+
 
 //        generate jwt token
         String token = Jwts.builder()

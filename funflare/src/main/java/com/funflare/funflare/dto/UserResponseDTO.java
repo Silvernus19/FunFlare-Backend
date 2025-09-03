@@ -20,6 +20,7 @@ public class UserResponseDTO {
     private Boolean verified;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private String errormessage;
 
     public UserResponseDTO(User user) {
         //his.id = user.getId();
@@ -36,6 +37,15 @@ public class UserResponseDTO {
     }
 
     public UserResponseDTO(UserService userService, ResponseEntity<UserResponseDTO> userResponseDTOResponseEntity) {
+
+    }
+
+//    Constructor for error messages
+    public UserResponseDTO(String errorMessage) {
+        this.errormessage = errorMessage;
+    }
+
+    public UserResponseDTO() {
 
     }
 

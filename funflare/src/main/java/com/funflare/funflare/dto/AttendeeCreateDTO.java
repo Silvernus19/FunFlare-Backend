@@ -33,6 +33,8 @@ public class AttendeeCreateDTO {
     @Size( min = 8, message = "password must exceed 8 characters")
     public String password;
 
+    @NotBlank
+
 
     public String getFirstName() {
         return firstName;
