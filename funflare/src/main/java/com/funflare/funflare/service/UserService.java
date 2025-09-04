@@ -1,6 +1,7 @@
 package com.funflare.funflare.service;
 
 
+import com.funflare.funflare.dto.AdminCreateDTO;
 import com.funflare.funflare.model.User;
 import com.funflare.funflare.dto.AttendeeCreateDTO;
 import com.funflare.funflare.dto.OrganizerCreateDto;
@@ -31,7 +32,7 @@ public class UserService {
 
     }
 
-//    @Transactional
+   @Transactional
     public User registerAttendee(AttendeeCreateDTO dto) {
         if (userRepository.existsByEmail(dto.getEmailAdress())) {
             throw new IllegalArgumentException("Email address already exists" + dto.getEmailAdress());
@@ -55,7 +56,6 @@ public class UserService {
 
 
 
-        //return UserRepository.save(User);
     }
 
     //organizer
@@ -76,7 +76,7 @@ public class UserService {
             user.setEmail(dto.getEmailAdress());
             user.setUsername(dto.getUserName());
             user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
-            user.setRole(User.Role.ATTENDEE);
+            //user.setRole(User.Role.ATTENDEE);
             user.setPhone(dto.getPhoneNumber());
             user.setRole(User.Role.ORGANIZER);
             user.setOrganizationName(dto.getOrganizationName());
@@ -85,12 +85,42 @@ public class UserService {
             emailService.sendVerificationEmail(user.getEmail(), user.getVerificationToken());
             return (User) userRepository.save(user);
 
-//            Organizer
-
-
 
 
         }
+
+
+
+
+
+//        Admin registration service
+    @Transactional
+    public User registerAdmin(@Valid AdminCreateDTO dto) {
+        if(userRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Email address already exists" + dto.getEmail());
+        }
+
+//            check admin count , only one admin can be allowed at a time
+
+            Long adminCount = userRepository.countByRole(User.Role.ADMIN);
+            if (adminCount >= 1) {
+                throw new IllegalArgumentException("There can only be one admin at a time" + dto.getEmail());
+            }
+
+
+
+//Admin object
+        User user = new User();
+        user.setFirstname(dto.getFirstname());
+        user.setLastname(dto.getLastname());
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setRole(User.Role.ADMIN);
+        user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        user.setVerificationToken(UUID.randomUUID().toString());
+        emailService.sendVerificationEmail(user.getEmail(), user.getVerificationToken());
+        return userRepository.save(user);
+    }
 
     @Transactional
     public User verifyUser(String token) {

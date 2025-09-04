@@ -17,8 +17,7 @@ public class VerificationController {
     private final UserService userService;
     public UserResponseDTO userResponseDTO;
 
-//"df9d8c9e-ead4-46bc-98bd-3eaeb4e8c157"
-//    "$2a$10$iRxljxElWsspqVzy1moLHOr9sJw7w2kRyip31OdSJWoDQCVEX0eT."
+
 
     public VerificationController(UserService userService) {
         this.userService = userService;

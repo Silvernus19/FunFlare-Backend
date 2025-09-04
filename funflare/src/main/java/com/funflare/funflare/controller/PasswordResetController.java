@@ -1,4 +1,5 @@
 package com.funflare.funflare.controller;
 
-public class AdminController {
+public class PasswordResetController {
+
 }

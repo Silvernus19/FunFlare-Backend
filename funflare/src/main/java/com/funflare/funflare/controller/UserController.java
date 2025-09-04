@@ -1,7 +1,9 @@
 package com.funflare.funflare.controller;
 
 
+import com.funflare.funflare.dto.AdminCreateDTO;
 import com.funflare.funflare.dto.OrganizerCreateDto;
+import com.funflare.funflare.dto.UserCreateDTO;
 import com.funflare.funflare.model.User;
 import com.funflare.funflare.dto.AttendeeCreateDTO;
 import jakarta.validation.ConstraintViolationException;
@@ -20,8 +22,6 @@ import java.util.Map;
 public class UserController {
     private UserService userService;
 
-    //default constructor
-//    public UserController() {}
 
 //    @Autowired
     public UserController(UserService userService) {
@@ -30,24 +30,34 @@ public class UserController {
         this.userService = userService;
     }
 
+
+
     @PostMapping("/register/attendee")
     public ResponseEntity<User> registerAttendee(@Valid @RequestBody AttendeeCreateDTO dto) {
         User response = userService.registerAttendee(dto);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-//    public String testEndpoint() {
-//        return "endpoint hit!";
-//    }
+//    unified register method
+//@PostMapping("/register/attendee")
+//public ResponseEntity<User> registerUser(@Valid @RequestBody UserCreateDTO dto) {
+//    User response = userService.registerUser(dto);
+//    return new ResponseEntity<>(response, HttpStatus.CREATED);
+//}
+
+
 
     @PostMapping("/register/organizer")
     public ResponseEntity<User> registerOrganizer(@Valid @RequestBody OrganizerCreateDto dto) {
         User response = userService.registerOrganizer(dto);
         return new ResponseEntity<User>(response, HttpStatus.CREATED);
     }
-//    public String testEndpoint2() {
-//        return "Hello, World!";
-//    }
+
+    @PostMapping("/register/admin")
+    public ResponseEntity<User> registerAdmin(@Valid @RequestBody AdminCreateDTO dto) {
+        User response = userService.registerAdmin(dto);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
 
 
     @ControllerAdvice

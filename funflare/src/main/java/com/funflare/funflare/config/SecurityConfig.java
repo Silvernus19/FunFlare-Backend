@@ -47,6 +47,9 @@ public class SecurityConfig {
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/users/register/admin").permitAll()
+
+
 
                         .requestMatchers( "/api/auth/verify", "/api/users/register/**").permitAll()
                         .requestMatchers("/api/auth/logout").authenticated()
@@ -75,7 +78,9 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
+        System.out.println("Incoming path: " + request.getRequestURI());
+
+        String path = request.getRequestURI().toLowerCase();
         return path.startsWith("/api/users/register/") || path.startsWith("/api/auth/verify") || path.equals("/api/auth/login");
     }
 

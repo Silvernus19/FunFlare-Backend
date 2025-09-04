@@ -62,6 +62,8 @@ public class LoginService {
         // Check if user is verified
         if (user.getVerified() == null || !user.getVerified()) {
             throw new BadCredentialsException("Account not verified. Please check your email to verify your account.");
+            //throw new DisabledException("Account not verified. Please check your email to verify your account.");
+
         }
 
 
