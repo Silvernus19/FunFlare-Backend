@@ -34,19 +34,32 @@ public class UserService {
 
    @Transactional
     public User registerAttendee(AttendeeCreateDTO dto) {
+
+//        username
+
+       String userName = (dto.getFirstName().trim() + " " + dto.getLastName().trim()).replaceAll("\\s+", "");
+       if (userName.isEmpty()) {
+           logger.error("Generated username is empty for firstName: {}, lastName: {}",
+                   dto.getFirstName(), dto.getLastName());
+           throw new IllegalArgumentException("First name and last name cannot be empty");
+       }
+
+
+
         if (userRepository.existsByEmail(dto.getEmailAdress())) {
             throw new IllegalArgumentException("Email address already exists" + dto.getEmailAdress());
         }
-        if (userRepository.existsByUsername(dto.getUserName())) {
-            throw new IllegalArgumentException("Username already exists" + dto.getUserName());
-        }
+//        if (userRepository.existsByUsername(userName)) {
+//            throw new IllegalArgumentException("Username already exists" + userName);
+//        }
 
             //user object
             User user = new User();
             user.setFirstname(dto.getFirstName());
             user.setLastname(dto.getLastName());
             user.setEmail(dto.getEmailAdress());
-            user.setUsername(dto.getUserName());
+            user.setUsername(userName);
+
            user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
             user.setRole(User.Role.ATTENDEE);
             user.setPhone(dto.getPhoneNumber());
@@ -96,11 +109,19 @@ public class UserService {
 //        Admin registration service
     @Transactional
     public User registerAdmin(@Valid AdminCreateDTO dto) {
+
+        String userName = (dto.getFirstname().trim() + dto.getLastname().trim()).replaceAll("\\s+", "");
+        if (userName.isEmpty()) {
+            logger.error("Generated username is empty for firstName: {}, lastName: {}",
+                    dto.getFirstname(), dto.getLastname());
+            throw new IllegalArgumentException("First name and last name cannot be empty");
+        }
+
         if(userRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email address already exists" + dto.getEmail());
         }
 
-//            check admin count , only one admin can be allowed at a time
+//            check admin count, only one admin can be allowed at a time
 
             Long adminCount = userRepository.countByRole(User.Role.ADMIN);
             if (adminCount >= 1) {
@@ -113,8 +134,9 @@ public class UserService {
         User user = new User();
         user.setFirstname(dto.getFirstname());
         user.setLastname(dto.getLastname());
-        user.setUsername(dto.getUsername());
+        user.setUsername(userName);
         user.setEmail(dto.getEmail());
+
         user.setRole(User.Role.ADMIN);
         user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         user.setVerificationToken(UUID.randomUUID().toString());

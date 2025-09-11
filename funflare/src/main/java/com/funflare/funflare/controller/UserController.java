@@ -17,6 +17,9 @@ import com.funflare.funflare.service.UserService;
 import java.util.HashMap;
 import java.util.Map;
 
+
+//@CrossOrigin(origins = "https://inquisitive-tarsier-7fb9f9.netlify.app/")
+
 @RestController
 @RequestMapping("api/users")
 public class UserController {
@@ -38,12 +41,7 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-//    unified register method
-//@PostMapping("/register/attendee")
-//public ResponseEntity<User> registerUser(@Valid @RequestBody UserCreateDTO dto) {
-//    User response = userService.registerUser(dto);
-//    return new ResponseEntity<>(response, HttpStatus.CREATED);
-//}
+
 
 
 

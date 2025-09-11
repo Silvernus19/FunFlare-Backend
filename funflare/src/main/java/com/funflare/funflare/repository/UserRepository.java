@@ -11,6 +11,7 @@ boolean existsByUsername(String username);
 boolean existsByEmail(String email);
 Long countByRole(User.Role role);
 Optional<User> findByUsername(String username);
+Optional<User> findById(Long user_id);
 Optional<User> findByEmail(String email);
 Optional<User> findByVerificationToken(String verification_token);
 //Optional<User> findByVerified(Boolean verified);

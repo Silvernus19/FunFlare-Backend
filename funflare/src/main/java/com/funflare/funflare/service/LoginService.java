@@ -86,18 +86,15 @@ public class LoginService {
 
 //        generate jwt token
         String token = Jwts.builder()
-        .setSubject(user.getEmail())
-                .claim("userId", user.getId())
-                .claim("role", user.getRole())
+                .setSubject(user.getEmail())
+                .claim("userId", String.valueOf(user.getId())) // Convert userId to String
+                .claim("role", user.getRole().name()) // Ensure role is a String
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(Instant.now().toEpochMilli() + jwtExpirationms))
                 .signWith(SignatureAlgorithm.HS256, jwtSecret)
                 .compact();
 
-        // Update last login (optional)
-//        user.setLastLogin(OffsetDateTime.from(Instant.now()));
-//        userRepository.save(user);
-
+        
 //        updated last login
         user.setLastLogin(OffsetDateTime.now(ZoneOffset.UTC)); // Fixed
         userRepository.save(user);

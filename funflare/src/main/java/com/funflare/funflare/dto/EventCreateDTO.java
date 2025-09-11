@@ -1,152 +1,89 @@
 package com.funflare.funflare.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-
-import java.sql.Timestamp;
-import java.util.Date;
+import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class EventCreateDTO {
 
     @NotBlank(message = "Event name is required")
-    @Size( max = 100, message = "Event name must not exceed 100 characters")
-    public String event_name;
+    @Size(max = 255, message = "Event name must not exceed 255 characters")
+    private String name;
 
-    @NotBlank(message = "description for the event is required")
-    @Size( max = 255, message = "description must exceed 100 characters")
-    public String description;
+    @Size(max = 65535, message = "Description must not exceed 65535 characters")
+    private String description;
 
-    @NotBlank(message = "Event_date is required")
-    public Date Event_date;
+    @NotBlank(message = "Location is required")
+    @Size(max = 255, message = "Location must not exceed 255 characters")
+    private String location;
 
-    @NotBlank(message = "Event location is required")
-    @Size(max = 255, message = "Event loacation must not exceed 100 characters")
-    public String location;
+    @Size(max = 255, message = "Event poster URL must not exceed 255 characters")
+    private String eventPosterUrl;
 
-    @NotBlank(message = "Event posters are required")
-    @Size( max = 100, message = "URL not exceed 12 characters")
-    public String event_poster_url;
+    @Min(value = 0, message = "Event capacity must be non-negative")
+    private Integer eventCapacity;
 
-    private final String event_status = "upcoming";
+    @Size(max = 100, message = "Event category must not exceed 100 characters")
+    private String eventCategory;
 
-    @NotBlank(message = "event capacity is required for ticket generation")
-    public Integer event_capacity;
+    @NotNull(message = "Event start date is required")
+    private LocalDate eventStartDate;
 
-    @NotBlank(message = "event category is required")
-    @Size(max = 50 , message = "event capacity must not exceed 50 characters")
-    public String event_category;
+    @NotNull(message = "Event end date is required")
+    private LocalDate eventEndDate;
 
-    @NotBlank(message = "Event end date is required")
-    public Timestamp Event_end_date;
+    @NotNull(message = "Event start time is required")
+    private LocalTime eventStartTime;
 
-    @NotBlank(message = "Event start time is required")
-    public Date Event_start_time;
+    @NotNull(message = "Event end time is required")
+    private LocalTime eventEndTime;
 
-    @NotBlank(message = "Event end time is required")
-    public Date Event_end_time;
+//    private JsonNode metadata;
 
+  //  private byte[] eventPoster;
 
+//    @NotNull(message = "User ID is required")
+//    private Long userId;
 
+    // Getters and setters
 
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    @NotBlank(message = "Password is required")
-    @Size( min = 8, message = "password must exceed 8 characters")
-    public String password;
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 
-//    Getters and setters
-//    Some getters might be missing
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
 
+    public String getEventPosterUrl() { return eventPosterUrl; }
+    public void setEventPosterUrl(String eventPosterUrl) { this.eventPosterUrl = eventPosterUrl; }
 
-    public String getEvent_name() {
-        return event_name;
-    }
+    public Integer getEventCapacity() { return eventCapacity; }
+    public void setEventCapacity(Integer eventCapacity) { this.eventCapacity = eventCapacity; }
 
-    public void setEvent_name(String event_name) {
-        this.event_name = event_name;
-    }
+    public String getEventCategory() { return eventCategory; }
+    public void setEventCategory(String eventCategory) { this.eventCategory = eventCategory; }
 
-    public String getDescription() {
-        return description;
-    }
+    public LocalDate getEventStartDate() { return eventStartDate; }
+    public void setEventStartDate(LocalDate eventStartDate) { this.eventStartDate = eventStartDate; }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public LocalDate getEventEndDate() { return eventEndDate; }
+    public void setEventEndDate(LocalDate eventEndDate) { this.eventEndDate = eventEndDate; }
 
-    public Date getEvent_date() {
-        return Event_date;
-    }
+    public LocalTime getEventStartTime() { return eventStartTime; }
+    public void setEventStartTime(LocalTime eventStartTime) { this.eventStartTime = eventStartTime; }
 
-    public void setEvent_date(Date event_date) {
-        Event_date = event_date;
-    }
+    public LocalTime getEventEndTime() { return eventEndTime; }
+    public void setEventEndTime(LocalTime eventEndTime) { this.eventEndTime = eventEndTime; }
 
-    public String getLocation() {
-        return location;
-    }
+//    public JsonNode getMetadata() { return metadata; }
+//    public void setMetadata(JsonNode metadata) { this.metadata = metadata; }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
+//    public byte[] getEventPoster() { return eventPoster; }
+//    public void setEventPoster(byte[] eventPoster) { this.eventPoster = eventPoster; }
 
-    public String getEvent_poster_url() {
-        return event_poster_url;
-    }
-
-    public void setEvent_poster_url(String event_poster_url) {
-        this.event_poster_url = event_poster_url;
-    }
-
-    public String getEvent_status() {
-        return event_status;
-    }
-
-    public String getEvent_category() {
-        return event_category;
-    }
-
-    public void setEvent_category(String event_category) {
-        this.event_category = event_category;
-    }
-
-    public Integer getEvent_capacity() {
-        return event_capacity;
-    }
-
-    public void setEvent_capacity(Integer event_capacity) {
-        this.event_capacity = event_capacity;
-    }
-
-    public Date getEvent_end_date() {
-        return Event_end_date;
-    }
-
-    public void setEvent_end_date(Timestamp event_end_date) {
-        Event_end_date = event_end_date;
-    }
-
-    public Date getEvent_start_time() {
-        return Event_start_time;
-    }
-
-    public void setEvent_start_time(Date event_start_time) {
-        Event_start_time = event_start_time;
-    }
-
-    public Date getEvent_end_time() {
-        return Event_end_time;
-    }
-
-    public void setEvent_end_time(Date event_end_time) {
-        Event_end_time = event_end_time;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+//    public Long getUserId() { return userId; }
+//    public void setUserId(Long userId) { this.userId = userId; }
 }

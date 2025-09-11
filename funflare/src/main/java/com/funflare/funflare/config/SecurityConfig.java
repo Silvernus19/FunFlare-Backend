@@ -48,6 +48,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/users/register/admin").permitAll()
+                        .requestMatchers("/api/users/register/organizer").permitAll()
+                        .requestMatchers("/api/events/create/event").permitAll()
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/verify", "/error").permitAll() // Added /error)
+
+
+
 
 
 

@@ -14,8 +14,8 @@ public class AdminCreateDTO {
     @NotBlank(message = "please enter your first name")
     private String lastname;
 
-    @NotBlank(message = "please enter your username")
-    private String username;
+//    @NotBlank(message = "please enter your username")
+//    private String username;
     @NotBlank(message = "please enter your email adress to sign up or in")
     @Email(message = "please enter a valid email")
     private String email;
@@ -48,14 +48,14 @@ public class AdminCreateDTO {
     public String getRole() {
         return role;
     }
+//
+//    public String getUsername() {
+//        return username;
+//    }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
+//    public void setUsername(String username) {
+//        this.username = username;
+//    }
 
     public String getFirstname() {
         return firstname;

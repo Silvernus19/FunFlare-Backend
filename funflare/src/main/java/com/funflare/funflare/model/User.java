@@ -4,6 +4,8 @@ package com.funflare.funflare.model;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -15,7 +17,9 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long id;
+
 
 
     @Column(nullable = false, length = 100)
@@ -60,10 +64,14 @@ public class User {
     @Column(name = "verification_token",  length = 255)
     private String verificationToken;
 
-//    default constructor
+
+//one to many relationship
+@OneToMany(mappedBy = "organizer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+private List<Event> events = new ArrayList<>();
+
+
+    //    default constructor
     public User() {}
-
-
 
 
     public Long getId() {
@@ -72,6 +80,14 @@ public class User {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public List<Event> getEvents() {
+        return events;
+    }
+
+    public void setEvents(List<Event> events) {
+        this.events = events;
     }
 
     public String getFirstname() {
@@ -173,6 +189,7 @@ public class User {
     public void setVerificationToken(String verificationToken) {
         this.verificationToken = verificationToken;
     }
+
 
     public void setLastLogin(OffsetDateTime lastLogin) {
         this.lastLogin = lastLogin;

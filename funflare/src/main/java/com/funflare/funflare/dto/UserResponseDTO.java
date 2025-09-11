@@ -23,7 +23,6 @@ public class UserResponseDTO {
     private String errormessage;
 
     public UserResponseDTO(User user) {
-        //his.id = user.getId();
         this.firstName = user.getFirstname();
         this.lastName = user.getLastname();
         this.username = user.getUsername();

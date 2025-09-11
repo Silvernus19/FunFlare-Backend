@@ -1,11 +1,13 @@
 package com.funflare.funflare.repository;
 
-import com.funflare.funflare.model.Events;
+import com.funflare.funflare.model.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 
-public  interface EventRepository extends JpaRepository<Events, Integer> {
+import java.time.LocalDate;
+import java.time.LocalTime;
 
-    boolean existsEventByid(Integer eventId);
-    boolean existsEventByname(String eventName);
+public interface EventRepository extends JpaRepository<Event, Integer> {
 
+    boolean existsByEventStartTimeAndLocationAndEventStartDate(LocalTime startTime, String location, LocalDate eventStartDate);
 }
