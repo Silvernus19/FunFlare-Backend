@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "events")
@@ -23,10 +25,16 @@ public class Event {
     @Column(name = "event_id")
     private Long id;
 
+
 //    Many to ine relationship with th users table
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User organizer;
+
+//    one to many relationship with the tickets table
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Ticket> tickets =  new ArrayList<>();
+
 
 //    column name of type string , cannot be blank
     @Column(name = "name", length = 255, nullable = false)

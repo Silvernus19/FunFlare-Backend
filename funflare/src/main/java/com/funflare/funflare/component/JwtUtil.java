@@ -22,6 +22,7 @@ public class JwtUtil {
         }
         try {
             Claims claims = Jwts.parser()
+
                     .setSigningKey(jwtSecret)
                     .parseClaimsJws(token)
                     .getBody();

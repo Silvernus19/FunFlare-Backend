@@ -78,16 +78,26 @@ public class UserService {
         if (userRepository.existsByEmail(dto.getEmailAdress())) {
             throw new IllegalArgumentException("Email address already exists" + dto.getEmailAdress());
         }
-        if (userRepository.existsByUsername(dto.getUserName())) {
-            throw new IllegalArgumentException("Username already exists" + dto.getUserName());
+
+        String userName = (dto.getFirstName().trim() + " " + dto.getLastName().trim()).replaceAll("\\s+", "");
+        if (userName.isEmpty()) {
+            logger.error("Generated username is empty for firstName: {}, lastName: {}",
+                    dto.getFirstName(), dto.getLastName());
+            throw new IllegalArgumentException("First name and last name cannot be empty");
         }
+
+
+
+//        if (userRepository.existsByUsername(dto.getUserName())) {
+//            throw new IllegalArgumentException("Username already exists" + dto.getUserName());
+//        }
 
             //user object
             User user = new User();
             user.setFirstname(dto.getFirstName());
             user.setLastname(dto.getLastName());
             user.setEmail(dto.getEmailAdress());
-            user.setUsername(dto.getUserName());
+            user.setUsername(userName);
             user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
             //user.setRole(User.Role.ATTENDEE);
             user.setPhone(dto.getPhoneNumber());

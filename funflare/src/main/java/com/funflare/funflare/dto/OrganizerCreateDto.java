@@ -14,9 +14,9 @@ public class OrganizerCreateDto {
     @Size( max = 100, message = "second name must not exceed 100 characters")
     public String lastName;
 
-    @NotBlank(message = "Username is required")
-    @Size( max = 100, message = "second name must not exceed 100 characters")
-    public String userName;
+//    @NotBlank(message = "Username is required")
+//    @Size( max = 100, message = "second name must not exceed 100 characters")
+//    public String userName;
 
     @NotBlank(message = "email is required")
     @Email( message = "email must be valid")
@@ -62,13 +62,13 @@ public class OrganizerCreateDto {
         this.lastName = lastName;
     }
 
-    public String getUserName() {
-        return userName;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
+//    public String getUserName() {
+//        return userName;
+//    }
+//
+//    public void setUserName(String userName) {
+//        this.userName = userName;
+//    }
 
     public String getPhoneNumber() {
         return phoneNumber;

@@ -36,6 +36,11 @@ public class EventService {
                     dto.getLocation(), dto.getEventStartDate(), dto.getEventStartTime());
             throw new RuntimeException("Event already exists");
         }
+
+//        get event capacity from the db
+
+
+
 //        validate event capacity
         if (dto.getEventCapacity() == null || dto.getEventCapacity() < 0) {
             logger.error("Event capacity is empty");
@@ -79,6 +84,18 @@ public class EventService {
         return eventRepository.save(event);
 
 
+
+
     }
 
+
+    public Integer getCapacity(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        return event.getEventCapacity();
+    }
+
+
 }
+
+

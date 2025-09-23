@@ -6,8 +6,14 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Integer> {
 
     boolean existsByEventStartTimeAndLocationAndEventStartDate(LocalTime startTime, String location, LocalDate eventStartDate);
+
+    //@Override
+    Optional<Event> findById(Long eventId);
+    boolean existsByName(String eventName);
+
 }
