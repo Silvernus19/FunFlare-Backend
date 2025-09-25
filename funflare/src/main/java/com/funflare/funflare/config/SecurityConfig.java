@@ -51,7 +51,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/register/organizer").permitAll()
                         .requestMatchers("/api/events/create/event").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/verify", "/error").permitAll() // Added /error)
+                        .requestMatchers("/api/auth/verify", "/error").permitAll()
+                        .requestMatchers("/api/events/generate/tickets").permitAll()
+
+                        // Added /error)
 
 
 

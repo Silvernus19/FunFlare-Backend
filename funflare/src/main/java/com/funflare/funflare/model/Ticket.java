@@ -1,23 +1,19 @@
 package com.funflare.funflare.model;
 
-
 import jakarta.persistence.*;
-import java.security.Timestamp;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-
 
 @Entity
 @Table(name = "tickets")
 public class Ticket {
 
     public enum Type {
-        EARLYBIRD,
+        EARLY_BIRD,
         ADVANCE
     }
-
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,36 +24,52 @@ public class Ticket {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-
-    @Column(name= "ticket_type")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ticket_type", nullable = false)
     private Type type;
 
     @Column(name = "ticket_price")
-    private Double price;
-    @Column(name = "ticket_quantity" )
+    private BigDecimal price;
+
+    @Column(name = "ticket_quantity")
     private Integer quantity;
 
     @Column(name = "quantity_sold")
     private Integer quantitySold;
+
     @Column(name = "ticket_metadata")
     private String metadata;
+
     @Column(name = "ticket_created_at")
     private OffsetDateTime createdAt;
+
     @Column(name = "ticket_updated_at")
     private OffsetDateTime updatedAt;
+
     @Column(name = "ticket_sale_start_date")
     private LocalDate saleStartDate;
+
     @Column(name = "ticket_sale_end_date")
     private LocalDate saleEndDate;
-    @Column(name = "ticket_sale_start-time")
+
+    @Column(name = "ticket_sale_start_time")
     private LocalTime saleStartTime;
+
     @Column(name = "ticket_sale_end_time")
     private LocalTime saleEndTime;
 
+    @PrePersist
+    protected void onCreate() {
+        createdAt = OffsetDateTime.now();
+        updatedAt = OffsetDateTime.now();
+    }
 
-//    Getters and setters
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
 
-
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -73,6 +85,7 @@ public class Ticket {
     public void setEvent(Event event) {
         this.event = event;
     }
+
     public Type getType() {
         return type;
     }
@@ -81,11 +94,11 @@ public class Ticket {
         this.type = type;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -96,7 +109,6 @@ public class Ticket {
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
-
 
     public Integer getQuantitySold() {
         return quantitySold;

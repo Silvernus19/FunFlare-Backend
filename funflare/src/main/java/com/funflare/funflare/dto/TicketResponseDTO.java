@@ -1,23 +1,20 @@
 package com.funflare.funflare.dto;
 
-import com.funflare.funflare.model.Event;
 import com.funflare.funflare.model.Ticket;
-
-import java.security.Timestamp;
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 public class TicketResponseDTO {
 
-
-
-    private long  id;
-    private String event_name;
+    private Long id;
+    private String eventName;
     private String type;
-    private double price;
+    private BigDecimal price;
     private Integer quantity;
+    private Integer quantitySold;
+    private String metadata;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private LocalDate saleStartDate;
@@ -25,40 +22,37 @@ public class TicketResponseDTO {
     private LocalTime saleStartTime;
     private LocalTime saleEndTime;
 
+    // Constructor to map from Ticket entity
     public TicketResponseDTO(Ticket ticket) {
         this.id = ticket.getId();
-        this.event_name = ticket.getEvent().getName();
-        this.type = ticket.getType().name();
+        this.type = ticket.getType() != null ? ticket.getType().name() : null;
         this.price = ticket.getPrice();
         this.quantity = ticket.getQuantity();
+        this.quantitySold = ticket.getQuantitySold();
+        this.metadata = ticket.getMetadata();
         this.createdAt = ticket.getCreatedAt();
         this.updatedAt = ticket.getUpdatedAt();
         this.saleStartDate = ticket.getSaleStartDate();
         this.saleEndDate = ticket.getSaleEndDate();
         this.saleStartTime = ticket.getSaleStartTime();
         this.saleEndTime = ticket.getSaleEndTime();
-
     }
 
-//    getters and setters
-
-
-
-
-    public long getId() {
+    // Getters and setters
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getEvent_name() {
-        return event_name;
+    public String getEventName() {
+        return eventName;
     }
 
-    public void setEvent_name(String event_name) {
-        this.event_name = event_name;
+    public void setEventName(String eventName) {
+        this.eventName = eventName;
     }
 
     public String getType() {
@@ -69,11 +63,11 @@ public class TicketResponseDTO {
         this.type = type;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -85,20 +79,36 @@ public class TicketResponseDTO {
         this.quantity = quantity;
     }
 
-    public OffsetDateTime getCreated_at() {
+    public Integer getQuantitySold() {
+        return quantitySold;
+    }
+
+    public void setQuantitySold(Integer quantitySold) {
+        this.quantitySold = quantitySold;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreated_at(OffsetDateTime created_at) {
-        this.createdAt = created_at;
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
-    public OffsetDateTime getUpdated_at() {
+    public OffsetDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdated_at(OffsetDateTime updated_at) {
-        this.updatedAt = updated_at;
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public LocalDate getSaleStartDate() {

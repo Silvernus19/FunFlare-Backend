@@ -1,6 +1,7 @@
 package com.funflare.funflare.controller;
 
 import com.funflare.funflare.dto.EventCreateDTO;
+import com.funflare.funflare.dto.EventResponseDTO;
 import com.funflare.funflare.model.Event;
 import com.funflare.funflare.service.EventService;
 import com.funflare.funflare.component.JwtUtil;
@@ -28,14 +29,14 @@ public class EventController {
     }
 
     @PostMapping("/create/event")
-    public ResponseEntity<?> createEvent(@RequestBody @Valid EventCreateDTO dto,
-                                         @RequestHeader("Authorization") String authorizationHeader,
-                                         Authentication authentication) {
+    public ResponseEntity<EventResponseDTO> createEvent(@RequestBody @Valid EventCreateDTO dto,
+                                                        @RequestHeader("Authorization") String authorizationHeader,
+                                                        Authentication authentication) {
         try {
             // Check if user is authenticated
             if (authentication == null || !authentication.isAuthenticated()) {
                 logger.error("No authenticated user provided");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new EventResponseDTO(null));
             }
 
             // Extract userId from JWT
@@ -45,16 +46,17 @@ public class EventController {
             // Create event
             Event createdEvent = eventService.createEvent(dto, Long.parseLong(userId));
             logger.info("Event created successfully: {}", createdEvent.getName());
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+            EventResponseDTO response = new EventResponseDTO(createdEvent);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (NumberFormatException e) {
             logger.error("Invalid userId format in JWT: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new EventResponseDTO(null));
         } catch (IllegalArgumentException e) {
             logger.error("Failed to create event: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new EventResponseDTO(null));
         } catch (Exception e) {
             logger.error("Unexpected error creating event: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new EventResponseDTO(null));
         }
     }
 }

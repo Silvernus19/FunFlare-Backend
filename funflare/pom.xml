@@ -137,6 +137,11 @@
             <version>2.1.2</version> <!-- Or a compatible version -->
         </dependency>
 
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+
     </dependencies>
 
 	<build>

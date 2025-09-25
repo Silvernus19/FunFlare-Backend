@@ -1,47 +1,50 @@
 package com.funflare.funflare.dto;
 
 import com.funflare.funflare.model.Ticket;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class TicketCreateDTO {
 
-@NotBlank(message = "ticket type cannot be blank")
+    @NotNull(message = "Event ID cannot be null")
+    private Long eventId;
+
+    @NotBlank(message = "Ticket type cannot be blank")
+    @Pattern(regexp = "(?i)(EARLY_BIRD|EARLYBIRD|ADVANCE)", message = "Ticket type must be EARLY_BIRD, EARLYBIRD, or ADVANCE")
     private String type;
-@NotNull(message = "ticket price cannot be empty")
-    private Double price;
-@NotNull(message = "ticket quantity must not be null")
+
+    @NotNull(message = "Ticket price cannot be empty")
+    private BigDecimal price;
+
+    @NotNull(message = "Ticket quantity must not be null")
+    @Min(value = 1, message = "Ticket quantity must be at least 1")
     private Integer quantity;
-@NotNull(message = "ticket sale start date cannot be blank")
+
+    @NotNull(message = "Ticket sale start date cannot be blank")
     private LocalDate saleStartDate;
-@NotNull(message = "ticket sale end date cannot be null")
+
+    @NotNull(message = "Ticket sale end date cannot be null")
     private LocalDate saleEndDate;
-@NotNull(message = "ticket sale start time cannot eb null")
+
+    @NotNull(message = "Ticket sale start time cannot be null")
     private LocalTime saleStartTime;
-@NotNull(message = "ticket sale end time cannot be null")
+
+    @NotNull(message = "Ticket sale end time cannot be null")
     private LocalTime saleEndTime;
 
-
-//Getters and setters
-
-
-    public LocalTime getSaleStartTime() {
-        return saleStartTime;
+    // Getters and setters
+    public Long getEventId() {
+        return eventId;
     }
 
-    public void setSaleStartTime(LocalTime saleStartTime) {
-        this.saleStartTime = saleStartTime;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public String getType() {
@@ -50,6 +53,14 @@ public class TicketCreateDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
     public Integer getQuantity() {
@@ -74,6 +85,14 @@ public class TicketCreateDTO {
 
     public void setSaleEndDate(LocalDate saleEndDate) {
         this.saleEndDate = saleEndDate;
+    }
+
+    public LocalTime getSaleStartTime() {
+        return saleStartTime;
+    }
+
+    public void setSaleStartTime(LocalTime saleStartTime) {
+        this.saleStartTime = saleStartTime;
     }
 
     public LocalTime getSaleEndTime() {
