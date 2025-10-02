@@ -18,8 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-//@CrossOrigin(origins = "https://inquisitive-tarsier-7fb9f9.netlify.app/")
-
+@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.OPTIONS})
 @RestController
 @RequestMapping("api/users")
 public class UserController {

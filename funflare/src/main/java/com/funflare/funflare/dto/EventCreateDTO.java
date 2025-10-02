@@ -1,7 +1,6 @@
 package com.funflare.funflare.dto;
 
 import jakarta.validation.constraints.*;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.time.LocalDate;
 import java.time.LocalTime;
 

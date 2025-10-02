@@ -1,6 +1,9 @@
 package com.funflare.funflare.repository;
 
-public class PurchaseRepository {
+import com.funflare.funflare.model.Wallet;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PurchaseRepository extends JpaRepository <Wallet,Long> {
 
 
 

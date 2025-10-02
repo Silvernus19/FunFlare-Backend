@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,10 +20,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -42,26 +47,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/users/register/admin").permitAll()
-                        .requestMatchers("/api/users/register/organizer").permitAll()
-                        .requestMatchers("/api/events/create/event").permitAll()
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/verify", "/error").permitAll()
-                        .requestMatchers("/api/events/generate/tickets").permitAll()
-
-                        // Added /error)
-
-
-
-
-
-
-                        .requestMatchers( "/api/auth/verify", "/api/users/register/**").permitAll()
+                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**", "/api/events/create/event", "/api/Users/create/wallet", "/api/events/generate/tickets", "/error").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly allow OPTIONS
                         .requestMatchers("/api/auth/logout").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -71,6 +63,18 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
@@ -88,15 +92,24 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        System.out.println("Incoming path: " + request.getRequestURI());
-
         String path = request.getRequestURI().toLowerCase();
-        return path.startsWith("/api/users/register/") || path.startsWith("/api/auth/verify") || path.equals("/api/auth/login");
+        return  path.startsWith("/api/users/register") ||
+                path.startsWith("/api/auth/verify") ||
+                path.equals("/api/users/login") ||
+                path.equals("/api/events/generate/tickets") ||
+                path.equals("/api/users/create/wallet") ||   // <-- added here
+                path.equals("/error") ||
+                request.getMethod().equalsIgnoreCase("OPTIONS"); // Skip OPTIONS requests
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        if (shouldNotFilter(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
@@ -107,7 +120,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .getBody();
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
-                System.out.println("Token validated: username=" + username + ", role=" + role); // Debug
+                System.out.println("Token validated: username=" + username + ", role=" + role);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         username,
                         null,

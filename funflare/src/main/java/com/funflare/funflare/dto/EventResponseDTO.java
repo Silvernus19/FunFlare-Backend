@@ -18,12 +18,15 @@ public class EventResponseDTO {
     private LocalDate eventEndDate;
     private LocalTime eventStartTime;
     private LocalTime eventEndTime;
-    private String eventStatus; // Assuming Event has an eventStatus enum or field
+    private String eventStatus;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 
     // Constructor to map from Event entity
     public EventResponseDTO(Event event) {
+        if (event == null) {
+            throw new IllegalArgumentException("Event cannot be null");
+        }
         this.id = event.getId();
         this.name = event.getName();
         this.description = event.getDescription();

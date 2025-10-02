@@ -69,6 +69,10 @@ public class User {
 @OneToMany(mappedBy = "organizer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 private List<Event> events = new ArrayList<>();
 
+//ONE TO ONE RELATIONSHIP WITH THE WALLETS TABLE
+@OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+private Wallet wallet;
+
 
     //    default constructor
     public User() {}
