@@ -83,7 +83,6 @@ public class LoginService {
             throw new BadCredentialsException("invalid credentials");
         }
 
-
 //        generate jwt token
         String token = Jwts.builder()
                 .setSubject(user.getEmail())
@@ -101,11 +100,6 @@ public class LoginService {
 
 //        return statement
         return new LoginResponseDTO(token, user.getId(), user.getUsername(), user.getRole().name());
-
-
-
-
-
 
 
     }

@@ -6,6 +6,7 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Integer> {
@@ -16,4 +17,5 @@ public interface EventRepository extends JpaRepository<Event, Integer> {
     Optional<Event> findById(Long eventId);
     boolean existsByName(String eventName);
 
+    List<Event> findByOrganizerId(Long userId);
 }

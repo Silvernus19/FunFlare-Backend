@@ -1,6 +1,5 @@
 package com.funflare.funflare.service;
 
-
 import com.funflare.funflare.dto.EventCreateDTO;
 import com.funflare.funflare.model.Event;
 import com.funflare.funflare.model.User;
@@ -12,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 public class EventService {
@@ -20,14 +20,12 @@ public class EventService {
     private UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
-
     public EventService(EventRepository eventRepository, UserRepository userRepository) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
     }
 
     @Transactional
-
     public Event createEvent(EventCreateDTO dto, Long userId) {
         boolean exists = eventRepository.existsByEventStartTimeAndLocationAndEventStartDate(
                 dto.getEventStartTime(), dto.getLocation(), dto.getEventStartDate());
@@ -37,17 +35,13 @@ public class EventService {
             throw new RuntimeException("Event already exists");
         }
 
-//        get event capacity from the db
-
-
-
-//        validate event capacity
+        // validate event capacity
         if (dto.getEventCapacity() == null || dto.getEventCapacity() < 0) {
             logger.error("Event capacity is empty");
             throw new RuntimeException("Event capacity is empty");
         }
 
-//        fetch user
+        // fetch user
         User organizer = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     logger.error("User with id {} not found", userId);
@@ -58,16 +52,13 @@ public class EventService {
             throw new RuntimeException("Only organizers and admins can add events");
         }
 
-
-        //map entity to dto
-
-
         // Map DTO to entity
         Event event = new Event();
         event.setName(dto.getName());
         event.setDescription(dto.getDescription());
         event.setLocation(dto.getLocation());
-        event.setEventPosterUrl(dto.getEventPosterUrl());
+        event.setEventPosterUrl(dto.getEventPosterUrl()); // Optional: Keep if needed for URLs
+        event.setEventPoster(dto.getEventPoster()); // Store binary poster as bytea
         event.setEventCapacity(dto.getEventCapacity());
         event.setEventCategory(dto.getEventCategory());
         event.setEventStatus(Event.EventStatus.ACTIVE); // Default per schema
@@ -75,19 +66,12 @@ public class EventService {
         event.setEventEndDate(dto.getEventEndDate());
         event.setEventStartTime(dto.getEventStartTime());
         event.setEventEndTime(dto.getEventEndTime());
-        //event.setMetadata(dto.getMetadata());
-       // event.setEventPoster(dto.getEventPoster());
         event.setOrganizer(organizer);
 
         // Save and return
         logger.info("Creating event: {}", event.getName());
         return eventRepository.save(event);
-
-
-
-
     }
-
 
     public Integer getCapacity(Long eventId) {
         Event event = eventRepository.findById(eventId)
@@ -95,7 +79,16 @@ public class EventService {
         return event.getEventCapacity();
     }
 
+    public Event getEventById(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> {
+                    logger.error("Event with id {} not found", eventId);
+                    return new RuntimeException("Event not found");
+                });
+    }
 
+    // Add to EventService.java
+    public List<Event> getOrganizerEvents(Long userId) {
+        return eventRepository.findByOrganizerId(userId);
+    }
 }
-
-

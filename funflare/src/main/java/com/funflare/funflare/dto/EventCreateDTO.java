@@ -38,12 +38,9 @@ public class EventCreateDTO {
     @NotNull(message = "Event end time is required")
     private LocalTime eventEndTime;
 
-//    private JsonNode metadata;
-
-  //  private byte[] eventPoster;
-
-//    @NotNull(message = "User ID is required")
-//    private Long userId;
+    // Binary data for event poster (stored as bytea in Postgres)
+    // Optional: Add @Size(max = 5242880, message = "Poster size must not exceed 5MB") for validation
+    private byte[] eventPoster;
 
     // Getters and setters
 
@@ -77,12 +74,6 @@ public class EventCreateDTO {
     public LocalTime getEventEndTime() { return eventEndTime; }
     public void setEventEndTime(LocalTime eventEndTime) { this.eventEndTime = eventEndTime; }
 
-//    public JsonNode getMetadata() { return metadata; }
-//    public void setMetadata(JsonNode metadata) { this.metadata = metadata; }
-
-//    public byte[] getEventPoster() { return eventPoster; }
-//    public void setEventPoster(byte[] eventPoster) { this.eventPoster = eventPoster; }
-
-//    public Long getUserId() { return userId; }
-//    public void setUserId(Long userId) { this.userId = userId; }
+    public byte[] getEventPoster() { return eventPoster; }
+    public void setEventPoster(byte[] eventPoster) { this.eventPoster = eventPoster; }
 }
