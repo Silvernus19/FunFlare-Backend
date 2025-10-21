@@ -12,7 +12,8 @@ public class Ticket {
 
     public enum Type {
         EARLY_BIRD,
-        ADVANCE
+        ADVANCE,
+        VIP
     }
 
     @Id

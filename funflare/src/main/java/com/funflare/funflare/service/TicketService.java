@@ -1,3 +1,4 @@
+// com/funflare/funflare/service/TicketService.java (Updated Mapping)
 package com.funflare.funflare.service;
 
 import com.funflare.funflare.dto.TicketCreateDTO;
@@ -46,13 +47,15 @@ public class TicketService {
                 ticketType = Ticket.Type.EARLY_BIRD;
             } else if ("ADVANCE".equalsIgnoreCase(dto.getType())) {
                 ticketType = Ticket.Type.ADVANCE;
+            } else if ("VIP".equalsIgnoreCase(dto.getType())) {  // ✅ Added VIP support
+                ticketType = Ticket.Type.VIP;
             } else {
                 logger.error("Invalid ticket type provided: {}", dto.getType());
-                throw new IllegalArgumentException("Invalid ticket type: " + dto.getType() + ". Must be EARLY_BIRD or ADVANCE.");
+                throw new IllegalArgumentException("Invalid ticket type: " + dto.getType() + ". Must be EARLY_BIRD, ADVANCE, or VIP.");
             }
         } catch (Exception e) {
             logger.error("Exception while mapping ticket type: {}. Error: {}", dto.getType(), e.getMessage());
-            throw new IllegalArgumentException("Invalid ticket type: " + dto.getType() + ". Must be EARLY_BIRD or ADVANCE.");
+            throw new IllegalArgumentException("Invalid ticket type: " + dto.getType() + ". Must be EARLY_BIRD, ADVANCE, or VIP.");
         }
 
         // Log the mapped ticket type
@@ -87,7 +90,6 @@ public class TicketService {
         // Create a new ticket entity
         Ticket ticket = new Ticket();
         ticket.setEvent(event);
-       // ticket.setEventName(event.getName() != null ? event.getName() : "Unknown Event");
         ticket.setType(ticketType); // Set validated ticket type
         ticket.setPrice(dto.getPrice());
         ticket.setQuantity(dto.getQuantity());
@@ -105,6 +107,7 @@ public class TicketService {
         // Save to database
         Ticket savedTicket = ticketRepository.save(ticket);
         logger.debug("Saved ticket with type: {}", savedTicket.getType());
+        System.out.println("ticket price is " + savedTicket.getPrice());
 
         return savedTicket;
     }

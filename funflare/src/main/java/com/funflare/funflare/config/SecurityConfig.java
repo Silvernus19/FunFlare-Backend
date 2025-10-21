@@ -52,7 +52,7 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**", "/api/events/create/event", "/api/Users/create/wallet", "/api/events/generate/tickets", "/error").permitAll()
+                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**", "/api/events/create/event", "/api/Users/create/wallet", "/api/events/generate/tickets", "api/payments/stkpush", "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly allow OPTIONS
                         .requestMatchers("/api/auth/logout").authenticated()
                         .anyRequest().authenticated()
@@ -96,6 +96,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         return  path.startsWith("/api/users/register") ||
                 path.startsWith("/api/auth/verify") ||
                 path.equals("/api/users/login") ||
+                path.equals("api/payments/stkpush") ||
                 path.equals("/api/events/generate/tickets") ||
                 path.equals("/api/users/create/wallet") ||   // <-- added here
                 path.equals("/error") ||

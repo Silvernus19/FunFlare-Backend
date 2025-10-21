@@ -1,3 +1,4 @@
+// com/funflare/funflare/dto/TicketCreateDTO.java (Updated)
 package com.funflare.funflare.dto;
 
 import com.funflare.funflare.model.Ticket;
@@ -16,10 +17,11 @@ public class TicketCreateDTO {
     private Long eventId;
 
     @NotBlank(message = "Ticket type cannot be blank")
-    @Pattern(regexp = "(?i)(EARLY_BIRD|EARLYBIRD|ADVANCE)", message = "Ticket type must be EARLY_BIRD, EARLYBIRD, or ADVANCE")
+    @Pattern(regexp = "(?i)(EARLY_BIRD|EARLYBIRD|ADVANCE|VIP)", message = "Ticket type must be EARLY_BIRD, EARLYBIRD, ADVANCE, or VIP")
     private String type;
 
     @NotNull(message = "Ticket price cannot be empty")
+    @Min(value = 0, message = "Ticket price must be at least 0") // Added explicit min for price
     private BigDecimal price;
 
     @NotNull(message = "Ticket quantity must not be null")
@@ -38,7 +40,10 @@ public class TicketCreateDTO {
     @NotNull(message = "Ticket sale end time cannot be null")
     private LocalTime saleEndTime;
 
-    // Getters and setters
+    // Getters and setters (unchanged)...
+
+
+
     public Long getEventId() {
         return eventId;
     }
