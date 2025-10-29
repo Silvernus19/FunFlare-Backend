@@ -6,6 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +54,11 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**", "/api/events/create/event", "/api/Users/create/wallet", "/api/events/generate/tickets", "api/payments/stkpush", "/error").permitAll()
+                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**",
+                                "/api/events/create/event", "/api/Users/create/wallet",
+                                "/api/events/generate/tickets", "/api/payments/stkpush",
+                                "/api/payments/mpesa/callback",  // ADD: Public for M-Pesa callbacks
+                                "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly allow OPTIONS
                         .requestMatchers("/api/auth/logout").authenticated()
                         .anyRequest().authenticated()
@@ -84,6 +90,7 @@ public class SecurityConfig {
 }
 
 class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);  // ADD: SLF4J logger
     private final String jwtSecret;
 
     public JwtAuthenticationFilter(String jwtSecret) {
@@ -93,12 +100,13 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI().toLowerCase();
-        return  path.startsWith("/api/users/register") ||
+        return path.startsWith("/api/users/register") ||
                 path.startsWith("/api/auth/verify") ||
                 path.equals("/api/users/login") ||
-                path.equals("api/payments/stkpush") ||
+                path.equals("/api/payments/stkpush") ||  // FIXED: Added leading /
                 path.equals("/api/events/generate/tickets") ||
-                path.equals("/api/users/create/wallet") ||   // <-- added here
+                path.equals("/api/users/create/wallet") ||
+                path.equals("/api/payments/mpesa/callback") ||  // ADD: Skip JWT for M-Pesa callbacks
                 path.equals("/error") ||
                 request.getMethod().equalsIgnoreCase("OPTIONS"); // Skip OPTIONS requests
     }
@@ -121,7 +129,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .getBody();
                 String username = claims.getSubject();
                 String role = claims.get("role", String.class);
-                System.out.println("Token validated: username=" + username + ", role=" + role);
+                logger.info("Token validated: username={}, role={}", username, role);  // CHANGED: Use logger
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         username,
                         null,
@@ -130,10 +138,10 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
-                System.err.println("JWT validation failed: " + e.getMessage());
+                logger.error("JWT validation failed: {}", e.getMessage());  // CHANGED: Use logger
             }
         } else {
-            System.err.println("Invalid or missing Authorization header: " + authorizationHeader);
+            logger.warn("Invalid or missing Authorization header: {}", authorizationHeader);  // CHANGED: Use logger
         }
         filterChain.doFilter(request, response);
     }

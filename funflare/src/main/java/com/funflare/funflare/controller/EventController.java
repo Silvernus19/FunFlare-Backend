@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;  // Add this import
 import com.funflare.funflare.dto.ErrorResponse;
 import com.funflare.funflare.dto.EventCreateDTO;
 import com.funflare.funflare.dto.EventResponseDTO;
+import com.funflare.funflare.dto.EventsTicketsDTO;  // New: For the combined response
 import com.funflare.funflare.model.Event;
 import com.funflare.funflare.service.EventService;
 import com.funflare.funflare.component.JwtUtil;
@@ -140,6 +141,54 @@ public class EventController {
                     .body(new ErrorResponse("Invalid user ID format in token"));
         } catch (Exception e) {
             logger.error("Unexpected error fetching organizer events: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("An unexpected error occurred"));
+        }
+    }
+
+    /**
+     * New endpoint: Retrieves event details along with its associated tickets.
+     * Accessible only to the event's organizer (ownership verified in service).
+     * Path: /api/events/{eventId}/details
+     */
+    @GetMapping("/{eventId}/details")
+    public ResponseEntity<?> getEventWithTickets(@PathVariable Long eventId,
+                                                 @RequestHeader("Authorization") String authorizationHeader,
+                                                 Authentication authentication) {
+        try {
+            // Check if the user is authenticated
+            if (authentication == null || !authentication.isAuthenticated()) {
+                logger.error("No authenticated user provided");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("User not authenticated"));
+            }
+
+            // Extract userId from JWT
+            String userIdStr = jwtUtil.extractUserId(authorizationHeader);
+            Long userId = Long.parseLong(userIdStr);
+            logger.info("Fetching event details for eventId: {} by userId: {}", eventId, userId);
+
+            // Call service (handles ownership, not found, etc.)
+            EventsTicketsDTO response = eventService.getEventWithTickets(eventId, userId);
+
+            return ResponseEntity.ok(response);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid userId format in JWT: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid user ID format in token"));
+        } catch (RuntimeException e) {
+            logger.error("Business logic error fetching event details: {}", e.getMessage());
+            if (e.getMessage().contains("Access denied")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(new ErrorResponse(e.getMessage()));
+            } else if (e.getMessage().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ErrorResponse(e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error fetching event details: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("An unexpected error occurred"));
         }
