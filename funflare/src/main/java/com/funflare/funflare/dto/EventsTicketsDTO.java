@@ -8,7 +8,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Base64;  // Added for base64 encoding
 import java.util.List;
+import java.util.logging.Logger;  // Simple logging; swap for SLF4J if preferred
 import java.util.stream.Collectors;
 
 /**
@@ -18,17 +20,19 @@ import java.util.stream.Collectors;
  *
  * Note:
  * - Organizer is exposed minimally (e.g., only ID or name if needed; adjust based on security).
- * - Poster: Uses eventPosterUrl if available; otherwise, can add base64 encoding logic in mapper if needed.
+ * - Poster: Uses eventPosterUrl if available; otherwise, converts byte[] to base64 data URI.
  * - Ticket types are kept as enum strings (e.g., "EARLY_BIRD")—map to frontend-friendly strings in service if required.
  */
 public class EventsTicketsDTO {
+
+    private static final Logger logger = Logger.getLogger(EventsTicketsDTO.class.getName());
 
     private Long id;
     private Long organizerId;  // Minimal exposure; or use String organizerName if preferred
     private String name;
     private String description;
     private String location;
-    private String eventPosterUrl;  // Or byte[] if embedding base64
+    private String eventPosterUrl;  // Full data URI for frontend <img src>
     private Integer eventCapacity;
     private String eventCategory;
     private Event.EventStatus eventStatus;
@@ -51,7 +55,6 @@ public class EventsTicketsDTO {
         this.name = event.getName();
         this.description = event.getDescription();
         this.location = event.getLocation();
-        this.eventPosterUrl = event.getEventPosterUrl();
         this.eventCapacity = event.getEventCapacity();
         this.eventCategory = event.getEventCategory();
         this.eventStatus = event.getEventStatus();
@@ -61,6 +64,21 @@ public class EventsTicketsDTO {
         this.eventEndDate = event.getEventEndDate();
         this.eventStartTime = event.getEventStartTime();
         this.eventEndTime = event.getEventEndTime();
+
+        // Handle poster: Prefer existing URL, else convert byte[] to full base64 data URI
+        this.eventPosterUrl = event.getEventPosterUrl();
+        if (this.eventPosterUrl == null && event.getEventPoster() != null && event.getEventPoster().length > 0) {
+            try {
+                String base64Data = Base64.getEncoder().encodeToString(event.getEventPoster());
+                this.eventPosterUrl = "data:image/jpeg;base64," + base64Data;  // Prefix for <img src>; adjust MIME if needed
+                logger.info("Generated base64 poster URL for event ID: " + event.getId() + " (length: " + base64Data.length() + ")");
+            } catch (Exception e) {
+                logger.warning("Failed to encode poster for event " + event.getId() + ": " + e.getMessage());
+                this.eventPosterUrl = null;
+            }
+        } else if (event.getEventPoster() == null) {
+            logger.info("No poster found for event ID: " + event.getId());
+        }
 
         // Map tickets to DTOs
         if (tickets != null) {

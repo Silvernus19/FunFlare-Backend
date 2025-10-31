@@ -22,6 +22,8 @@ public class User {
 
 
 
+
+
     @Column(nullable = false, length = 100)
     private String firstname;
 
@@ -73,6 +75,13 @@ private List<Event> events = new ArrayList<>();
 @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 private Wallet wallet;
 
+    public Wallet getWallet() {
+        return wallet;
+    }
+
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
+    }
 
     //    default constructor
     public User() {}

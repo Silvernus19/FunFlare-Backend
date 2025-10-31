@@ -18,4 +18,6 @@ public interface EventRepository extends JpaRepository<Event, Integer> {
     boolean existsByName(String eventName);
 
     List<Event> findByOrganizerId(Long userId);
+
+    List<Event> findByEventStatusAndEventStartDateAfter(Event.EventStatus eventStatus, LocalDate localDate);
 }

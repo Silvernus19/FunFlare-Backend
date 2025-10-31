@@ -55,9 +55,9 @@ public class SecurityConfig {
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**",
-                                "/api/events/create/event", "/api/Users/create/wallet",
+                                "/api/events/create/event", "/api/Users/create/wallet", "/api/events/public",
                                 "/api/events/generate/tickets", "/api/payments/stkpush",
-                                "/api/payments/mpesa/callback",  // ADD: Public for M-Pesa callbacks
+                                "/api/payments/mpesa/callback", "api/purchases/create", // ADD: Public for M-Pesa callbacks
                                 "/error").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly allow OPTIONS
                         .requestMatchers("/api/auth/logout").authenticated()
@@ -103,6 +103,7 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
         return path.startsWith("/api/users/register") ||
                 path.startsWith("/api/auth/verify") ||
                 path.equals("/api/users/login") ||
+                path.equals("/api/events/public") ||
                 path.equals("/api/payments/stkpush") ||  // FIXED: Added leading /
                 path.equals("/api/events/generate/tickets") ||
                 path.equals("/api/users/create/wallet") ||

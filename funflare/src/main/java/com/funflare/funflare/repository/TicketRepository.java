@@ -11,6 +11,8 @@ public interface TicketRepository  extends JpaRepository<Ticket,Long> {
     @Override
     Optional<Ticket> findById(Long TicketId);
     List<Ticket> findByEventId(Long eventId);    boolean existsByEventName(String eventName);
+
+Optional<Ticket> findByEventIdAndType(Long eventId, Ticket.Type type);
     //Optional<Ticket> findByname(String eventName);
     boolean existsByEventId(Long eventId);
 

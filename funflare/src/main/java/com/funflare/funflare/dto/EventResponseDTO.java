@@ -6,15 +6,18 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.logging.Logger;  // For simple logging (or use SLF4J if preferred)
 
 public class EventResponseDTO {
+
+    private static final Logger logger = Logger.getLogger(EventResponseDTO.class.getName());
 
     private Long id;
     private String name;
     private String description;
     private String location;
-    private String eventPosterUrl; // Kept for compatibility; can be used if URL generation is added later
-    private String eventPosterBase64; // Base64 encoded poster image for frontend display
+    private String eventPosterUrl; // Full data URI for frontend <img src>
+    private String eventPosterBase64; // Optional raw base64
     private Integer eventCapacity;
     private String eventCategory;
     private Event.EventStatus eventStatus;
@@ -31,11 +34,6 @@ public class EventResponseDTO {
         this.name = event.getName();
         this.description = event.getDescription();
         this.location = event.getLocation();
-        this.eventPosterUrl = event.getEventPosterUrl();
-        // Encode byte[] poster to base64 for frontend
-        if (event.getEventPoster() != null) {
-            this.eventPosterBase64 = Base64.getEncoder().encodeToString(event.getEventPoster());
-        }
         this.eventCapacity = event.getEventCapacity();
         this.eventCategory = event.getEventCategory();
         this.eventStatus = event.getEventStatus();
@@ -45,10 +43,26 @@ public class EventResponseDTO {
         this.eventEndDate = event.getEventEndDate();
         this.eventStartTime = event.getEventStartTime();
         this.eventEndTime = event.getEventEndTime();
-        // Note: eventPoster (byte[]) is excluded to avoid large payloads in response
+
+        // Handle poster: Prefer existing URL, else convert byte[] to full base64 data URI
+        this.eventPosterUrl = event.getEventPosterUrl();
+        if (this.eventPosterUrl == null && event.getEventPoster() != null && event.getEventPoster().length > 0) {
+            try {
+                String base64Data = Base64.getEncoder().encodeToString(event.getEventPoster());
+                this.eventPosterUrl = "data:image/jpeg;base64," + base64Data;  // Prefix for <img src>
+                this.eventPosterBase64 = base64Data;  // Optional raw version
+                logger.info("Generated base64 poster URL for event ID: " + event.getId() + " (length: " + base64Data.length() + ")");
+            } catch (Exception e) {
+                logger.warning("Failed to encode poster for event " + event.getId() + ": " + e.getMessage());
+                this.eventPosterUrl = null;
+                this.eventPosterBase64 = null;
+            }
+        } else if (event.getEventPoster() == null) {
+            logger.info("No poster found for event ID: " + event.getId());
+        }
     }
 
-    // Getters
+    // Getters (unchanged)
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getDescription() { return description; }
@@ -64,4 +78,7 @@ public class EventResponseDTO {
     public LocalDate getEventEndDate() { return eventEndDate; }
     public LocalTime getEventStartTime() { return eventStartTime; }
     public LocalTime getEventEndTime() { return eventEndTime; }
+
+    // Setters (add if needed for other uses; optional here)
+    // e.g., public void setEventPosterUrl(String eventPosterUrl) { this.eventPosterUrl = eventPosterUrl; }
 }

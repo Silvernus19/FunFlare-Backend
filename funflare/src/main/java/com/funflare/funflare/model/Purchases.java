@@ -1,77 +1,112 @@
 package com.funflare.funflare.model;
 
-
 import jakarta.persistence.*;
-
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;  // For timestamp with time zone
+import java.util.ArrayList;
 
+/**
+ * Entity representing a purchase transaction in the ticketing system.
+ * Maps to the 'purchases' table.
+ * Handles general purchase info; individual tickets in a related 'ticket_purchases' table.
+ */
 @Entity
 @Table(name = "purchases")
 public class Purchases {
 
-    public enum purchase_status{
-        REFUNDED,
-        CANCELLED,
+    public enum Status {
+        PENDING,
         COMPLETED,
-        PENDING
-
-
+        REFUNDED,
+        CANCELLED
     }
 
-    public enum payment_method {
-        WALLET,
+    public enum PaymentMethod {
+        MPESA,
         POINTS,
-        MPESA
-
+        WALLET
     }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "purchase_id")
-    private int purchaseId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
-    private Ticket ticket;
+    @JoinColumn(name = "user_id", nullable = true)  // Nullable as per schema (on delete set null)
+    private User user;  // Assuming User entity exists
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+//    one to many relationship with the ticket_purchases table
+//@OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+//private List<TicketPurchase> ticketPurchases = new ArrayList<>();
 
     @Column(name = "quantity", nullable = false)
-    private int quantity;
+    @NotNull
+    @Min(value = 1, message = "Quantity must be at least 1")
+    private Integer quantity;
 
     @Column(name = "total_amount", nullable = false)
-    private double totalAmount;
+    @NotNull
+    private Double totalAmount;  // double precision as per schema
 
-    @Column(name = "purchase_date")
-    private OffsetDateTime purchaseDate;
+    @Column(name = "purchase_date", nullable = false, updatable = false)
+    @NotNull
+    private OffsetDateTime purchaseDate = OffsetDateTime.now();  // Defaults to CURRENT_TIMESTAMP
 
-    @Column(name = "status")
-    private purchase_status status;
+    @Column(name = "transaction_ref", length = 255)
+    private String transactionRef;
 
-    @Column(name = "payment_method", nullable = false)
-    private payment_method payment_method;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @NotNull
+    private Status status = Status.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", length = 20)  // Nullable
+    private PaymentMethod paymentMethod;
 
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    @NotNull
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 
-//    getters and setters
+    @Column(name = "purchase_email", nullable = false, length = 255)
+    @NotNull
+    private String purchaseEmail = "";  // Default empty as per schema
 
+    @Column(name = "phone_number", length = 20)  // Nullable
+    private String phoneNumber;
 
-    public int getPurchaseId() {
-        return purchaseId;
+    @Column(name = "guest_name", length = 255)  // Nullable
+    private String guestName;
+
+    // Constructors
+    public Purchases() {}
+
+    public Purchases(User user, Integer quantity, Double totalAmount, PaymentMethod paymentMethod, String purchaseEmail) {
+        this.user = user;
+        this.quantity = quantity;
+        this.totalAmount = totalAmount;
+        this.paymentMethod = paymentMethod;
+        this.purchaseEmail = purchaseEmail;
     }
 
-    public void setPurchaseId(int purchaseId) {
-        this.purchaseId = purchaseId;
+    // PreUpdate for updated_at
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = OffsetDateTime.now();
     }
 
-    public Ticket getTicket() {
-        return ticket;
+    // Getters and Setters
+    public Long getId() {
+        return id;
     }
 
-    public void setTicket(Ticket ticket) {
-        this.ticket = ticket;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public User getUser() {
@@ -82,19 +117,19 @@ public class Purchases {
         this.user = user;
     }
 
-    public int getQuantity() {
+    public Integer getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
 
-    public double getTotalAmount() {
+    public Double getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(Double totalAmount) {
         this.totalAmount = totalAmount;
     }
 
@@ -106,20 +141,20 @@ public class Purchases {
         this.purchaseDate = purchaseDate;
     }
 
-    public purchase_status getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(purchase_status status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 
-    public payment_method getPayment_method() {
-        return payment_method;
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
     }
 
-    public void setPayment_method(payment_method payment_method) {
-        this.payment_method = payment_method;
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
     public OffsetDateTime getUpdatedAt() {
@@ -129,4 +164,43 @@ public class Purchases {
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public String getPurchaseEmail() {
+        return purchaseEmail;
+    }
+
+    public void setPurchaseEmail(String purchaseEmail) {
+        this.purchaseEmail = purchaseEmail;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getGuestName() {
+        return guestName;
+    }
+
+    public void setGuestName(String guestName) {
+        this.guestName = guestName;
+    }
+
+    public String getTransactionRef() {
+        return transactionRef;
+    }
+
+    public void setTransactionRef(String transactionRef) {
+        this.transactionRef = transactionRef;
+    }
+//    public List<TicketPurchase> getTicketPurchases() {
+//        return ticketPurchases;
+//    }
+//
+//    public void setTicketPurchases(List<TicketPurchase> ticketPurchases) {
+//        this.ticketPurchases = ticketPurchases;
+//    }
 }

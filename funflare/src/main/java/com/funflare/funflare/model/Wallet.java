@@ -19,8 +19,8 @@ public class Wallet {
     @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;
 
-    @Column(name = "balance", nullable = false, precision = 10, scale = 2)
-    private BigDecimal balance = BigDecimal.ZERO;  // default 0.00
+    @Column(name = "balance", nullable = false, precision = 10)
+    private Double balance = 0.0;  // default 0.00
 
 
 
@@ -58,11 +58,11 @@ public class Wallet {
         this.userId = userId;
     }
 
-    public BigDecimal getBalance() {
+    public Double getBalance() {
         return balance;
     }
 
-    public void setBalance(BigDecimal balance) {
+    public void setBalance(Double balance) {
         this.balance = balance;
     }
 
