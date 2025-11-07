@@ -172,6 +172,26 @@ public class EventController {
         }
     }
 
+    //public event details
+    /**
+     * PUBLIC: Get single event + tickets for buyers
+     */
+    @GetMapping("/public/{eventId}")
+    public ResponseEntity<?> getPublicEventWithTickets(@PathVariable Long eventId) {
+        try {
+            EventBuyerDTO event = eventService.getPublicEventWithTickets(eventId);
+            return ResponseEntity.ok(event);
+        } catch (RuntimeException e) {
+            logger.warn("Public event fetch failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Unexpected error in public event fetch", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to load event"));
+        }
+    }
+
 
     private BindingResult validateDto(EventCreateDTO dto) {
         jakarta.validation.Validator validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();

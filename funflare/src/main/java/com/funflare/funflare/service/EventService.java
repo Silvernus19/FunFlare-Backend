@@ -135,4 +135,39 @@ public class EventService {
                 })
                 .toList();
     }
+
+    //public event retrieval
+
+    /**
+     * Public: Get event + tickets for buyers (no ownership check)
+     */
+    @Transactional(readOnly = true)
+    public EventBuyerDTO getPublicEventWithTickets(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> {
+                    logger.error("Event with id {} not found", eventId);
+                    return new RuntimeException("Event not found");
+                });
+
+        // Optional: Only allow ACTIVE events
+        if (event.getEventStatus() != Event.EventStatus.ACTIVE) {
+            logger.info("Event {} is not active (status: {})", eventId, event.getEventStatus());
+            throw new RuntimeException("Event is not available");
+        }
+
+        List<Ticket> tickets = ticketRepository.findByEventId(eventId);
+
+        List<EventBuyerDTO.TicketInfo> ticketInfos = tickets.stream()
+                .filter(t -> t.getQuantity() > 0) // hide sold-out
+                .map(t -> new EventBuyerDTO.TicketInfo(
+                        t.getType().name(),
+                        t.getPrice(),
+                        t.getQuantity()
+                ))
+                .toList();
+
+        logger.info("Public fetch: Event {} with {} available tickets", eventId, ticketInfos.size());
+
+        return new EventBuyerDTO(event, ticketInfos);
+    }
 }

@@ -54,23 +54,28 @@ public class SecurityConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(formLogin -> formLogin.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/login", "/api/auth/verify", "/api/users/register/**",
-                                "/api/events/create/event", "/api/Users/create/wallet", "/api/events/public",
-                                "/api/events/generate/tickets", "/api/payments/stkpush",
-                                "/api/payments/mpesa/callback", "api/purchases/create", // ADD: Public for M-Pesa callbacks
-                                "/error").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Explicitly allow OPTIONS
+                        .requestMatchers(
+                                "/api/users/login",
+                                "/api/auth/verify",
+                                "/api/users/register/**",
+                                "/api/events/create/event",
+                                "/api/Users/create/wallet",
+                                "/api/events/public/**",           // ← FIXED: /** for /public/58
+                                "/api/events/generate/tickets",
+                                "/api/payments/stkpush",
+                                "/api/payments/mpesa/callback",
+                                "/api/purchases/create",
+                                "/error"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/logout").authenticated()
                         .anyRequest().authenticated()
                 )
-                .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.disable())
-                )
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
