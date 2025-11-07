@@ -3,17 +3,21 @@ package com.funflare.funflare.controller;
 import com.funflare.funflare.dto.PaymentRequestDTO;
 import com.funflare.funflare.dto.PaymentResponseDTO;
 import com.funflare.funflare.model.Purchases;
+import com.funflare.funflare.model.Purchases.Status;
 import com.funflare.funflare.repository.PurchasesRepository;
 import com.funflare.funflare.service.MpesaService;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.funflare.funflare.service.PointsService;
+import com.google.gson.*;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -26,9 +30,12 @@ public class PaymentController {
     private MpesaService mpesaService;
 
     @Autowired
-    private PurchasesRepository purchasesRepository;  // ← ADD THIS
+    private PurchasesRepository purchasesRepository;
 
-    // ==================== STK PUSH ====================
+    @Autowired
+    private PointsService pointsService; // ← NEW: For awarding points
+
+    // ==================== STK PUSH (unchanged) ====================
     @PostMapping("/stkpush")
     public ResponseEntity<PaymentResponseDTO> initiatePayment(@Valid @RequestBody PaymentRequestDTO request) {
         String accountRef = "TICKET-" + System.currentTimeMillis();
@@ -63,71 +70,113 @@ public class PaymentController {
         }
     }
 
-    // ==================== M-PESA CALLBACK ====================
+    // ==================== M-PESA CALLBACK (UPDATED) ====================
     @PostMapping("/mpesa/callback")
+    @Transactional
     public ResponseEntity<String> handleCallback(@RequestBody String callbackBody) {
         logger.info("M-PESA Callback Received: {}", callbackBody);
 
+        JsonObject root;
         try {
-            JsonObject root = gson.fromJson(callbackBody, JsonObject.class);
-            JsonObject stkCallback = root.getAsJsonObject("Body")
-                    .getAsJsonObject("stkCallback");
-
-            String checkoutId = stkCallback.get("CheckoutRequestID").getAsString();
-            int resultCode = stkCallback.get("ResultCode").getAsInt();
-
-            // Find purchase by CheckoutRequestID (stored in transaction_ref)
-            Purchases purchase = purchasesRepository.findByTransactionRef(checkoutId)
-                    .orElse(null);
-
-            if (purchase == null) {
-                logger.warn("No purchase found for CheckoutRequestID: {}", checkoutId);
-                return ResponseEntity.ok("OK");
-            }
-
-            if (resultCode == 0) {
-                // SUCCESS
-                String receipt = extractMpesaReceipt(stkCallback);
-                purchase.setStatus(Purchases.Status.COMPLETED);
-                purchase.setTransactionRef(receipt);  // Update from CheckoutID → M-Pesa Receipt
-                purchasesRepository.save(purchase);
-
-                logger.info("Purchase {} PAID successfully. M-Pesa Receipt: {}", purchase.getId(), receipt);
-            } else {
-                // FAILED
-                String resultDesc = stkCallback.has("ResultDesc")
-                        ? stkCallback.get("ResultDesc").getAsString()
-                        : "Unknown error";
-                purchase.setStatus(Purchases.Status.CANCELLED);
-                purchasesRepository.save(purchase);
-
-                logger.warn("Purchase {} FAILED: {}", purchase.getId(), resultDesc);
-            }
-
+            root = gson.fromJson(callbackBody, JsonObject.class);
         } catch (Exception e) {
-            logger.error("Error processing M-Pesa callback: ", e);
-            return ResponseEntity.status(500).body("ERROR");
+            logger.error("Invalid JSON in callback", e);
+            return ResponseEntity.badRequest().body("Invalid JSON");
         }
 
+        JsonObject body = root.getAsJsonObject("Body");
+        if (body == null || !body.has("stkCallback")) {
+            logger.warn("Missing Body/stkCallback in payload");
+            return ResponseEntity.badRequest().body("Invalid payload");
+        }
+
+        JsonObject stkCallback = body.getAsJsonObject("stkCallback");
+        String checkoutId = stkCallback.get("CheckoutRequestID").getAsString();
+        int resultCode = stkCallback.get("ResultCode").getAsInt();
+
+        // Find purchase by CheckoutRequestID
+        Optional<Purchases> optPurchase = purchasesRepository.findByTransactionRef(checkoutId);
+        if (optPurchase.isEmpty()) {
+            logger.warn("No purchase found for CheckoutRequestID: {}", checkoutId);
+            return ResponseEntity.ok("OK");
+        }
+
+        Purchases purchase = optPurchase.get();
+
+        // Prevent double-processing
+        if (purchase.getStatus() == Status.COMPLETED) {
+            logger.info("Purchase {} already COMPLETED – ignoring duplicate callback", purchase.getId());
+            return ResponseEntity.ok("OK");
+        }
+
+        if (resultCode != 0) {
+            // Payment FAILED
+            String resultDesc = stkCallback.has("ResultDesc")
+                    ? stkCallback.get("ResultDesc").getAsString()
+                    : "Unknown error";
+            purchase.setStatus(Status.CANCELLED);
+            purchasesRepository.save(purchase);
+            logger.warn("Purchase {} FAILED: {}", purchase.getId(), resultDesc);
+            return ResponseEntity.ok("OK");
+        }
+
+        // === SUCCESS: Validate amount & award points ===
+        BigDecimal paidAmount = extractPaidAmount(stkCallback);
+        BigDecimal expectedAmount = BigDecimal.valueOf(purchase.getTotalAmount());
+
+        if (paidAmount == null) {
+            logger.warn("Could not extract paid amount from callback for purchase {}", purchase.getId());
+        } else if (paidAmount.compareTo(expectedAmount) < 0) {
+            logger.warn("Insufficient payment: paid {} KES, expected {} KES for purchase {}", paidAmount, expectedAmount, purchase.getId());
+            purchase.setStatus(Status.PENDING);
+            purchasesRepository.save(purchase);
+            return ResponseEntity.ok("OK");
+        }
+
+        // Update receipt and status
+        String receipt = extractMpesaReceipt(stkCallback);
+        purchase.setTransactionRef(receipt); // Replace CheckoutID with receipt
+        purchase.setStatus(Status.COMPLETED);
+        purchasesRepository.save(purchase);
+
+        // === AWARD POINTS (Only on success) ===
+        pointsService.awardPointsForPurchase(purchase);
+
+        logger.info("Purchase {} PAID successfully. Receipt: {}. Points awarded.", purchase.getId(), receipt);
         return ResponseEntity.ok("OK");
     }
 
-    // Extract M-Pesa Receipt Number from CallbackMetadata
+    // Extract M-Pesa Receipt Number
     private String extractMpesaReceipt(JsonObject stkCallback) {
         try {
             JsonArray items = stkCallback.getAsJsonObject("CallbackMetadata")
                     .getAsJsonArray("Item");
-
-            for (int i = 0; i < items.size(); i++) {
-                JsonObject item = items.get(i).getAsJsonObject();
-                String name = item.get("Name").getAsString();
-                if ("MpesaReceiptNumber".equals(name)) {
+            for (JsonElement elem : items) {
+                JsonObject item = elem.getAsJsonObject();
+                if ("MpesaReceiptNumber".equals(item.get("Name").getAsString())) {
                     return item.get("Value").getAsString();
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed to extract M-Pesa receipt", e);
+            logger.debug("Failed to extract receipt", e);
         }
         return "UNKNOWN";
+    }
+
+    // Extract paid amount
+    private BigDecimal extractPaidAmount(JsonObject stkCallback) {
+        try {
+            JsonArray items = stkCallback.getAsJsonObject("CallbackMetadata")
+                    .getAsJsonArray("Item");
+            for (JsonElement elem : items) {
+                JsonObject item = elem.getAsJsonObject();
+                if ("Amount".equals(item.get("Name").getAsString())) {
+                    return item.get("Value").getAsBigDecimal();
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to extract amount", e);
+        }
+        return null;
     }
 }

@@ -6,6 +6,8 @@ import com.funflare.funflare.model.*;
 import com.funflare.funflare.model.Purchases.PaymentMethod;
 import com.funflare.funflare.model.Purchases.Status;
 import com.funflare.funflare.repository.*;
+import com.funflare.funflare.util.QrCodeGenerator;
+import com.google.zxing.WriterException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.transaction.Transactional;
@@ -14,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -33,6 +36,7 @@ public class PurchaseService {
     private final WalletRepository walletRepository;
     private final MpesaService mpesaService;
     private final EntityManager entityManager;
+    private final PointsService pointsService; // ← NEW
 
     @Autowired
     public PurchaseService(
@@ -42,7 +46,8 @@ public class PurchaseService {
             UserRepository userRepository,
             WalletRepository walletRepository,
             MpesaService mpesaService,
-            EntityManager entityManager
+            EntityManager entityManager,
+            PointsService pointsService
     ) {
         this.purchasesRepository = purchasesRepository;
         this.ticketPurchaseRepository = ticketPurchaseRepository;
@@ -51,6 +56,7 @@ public class PurchaseService {
         this.walletRepository = walletRepository;
         this.mpesaService = mpesaService;
         this.entityManager = entityManager;
+        this.pointsService = pointsService;
     }
 
     @Transactional
@@ -60,10 +66,8 @@ public class PurchaseService {
         User buyer = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-        // Validate availability before proceeding
         validateTicketsAvailability(dto.getEventId(), dto.getSelectedTickets());
 
-        // Calculate total
         BigDecimal calculatedTotal = dto.getSelectedTickets().stream()
                 .map(t -> BigDecimal.valueOf(t.getQuantity()).multiply(t.getPrice()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -71,7 +75,7 @@ public class PurchaseService {
                 .mapToInt(TicketSelectDTO::getQuantity)
                 .sum();
 
-        // Create purchase
+        // ---------- 1. CREATE PURCHASE ----------
         Purchases purchase = new Purchases();
         purchase.setUser(buyer);
         purchase.setQuantity(totalQuantity);
@@ -84,7 +88,7 @@ public class PurchaseService {
         purchase.setPurchaseDate(OffsetDateTime.now(ZoneOffset.UTC));
         purchase = purchasesRepository.save(purchase);
 
-        // Create TicketPurchase line items + reduce stock
+        // ---------- 2. CREATE TICKET LINE ITEMS ----------
         for (TicketSelectDTO sel : dto.getSelectedTickets()) {
             Ticket ticket = ticketRepository
                     .findByEventIdAndType(dto.getEventId(), sel.getTicketTypeEnum())
@@ -103,7 +107,10 @@ public class PurchaseService {
                 tp.setCheckedInAt(null);
                 ticketPurchaseRepository.save(tp);
 
-                // Pessimistic lock + reduce stock
+                // ---------- 3. GENERATE & STORE QR ----------
+                generateQrForTicket(tp);
+
+                // ---------- 4. REDUCE STOCK (PESSIMISTIC) ----------
                 Ticket lockedTicket = entityManager.find(Ticket.class, ticket.getId(), LockModeType.PESSIMISTIC_WRITE);
                 if (lockedTicket.getQuantity() <= 0) {
                     throw new RuntimeException("Stock depleted for " + sel.getTicketType());
@@ -114,29 +121,44 @@ public class PurchaseService {
             }
         }
 
-        // Process payment
+        // ---------- 5. PAYMENT ----------
         try {
             processPayment(purchase, dto.getPaymentMethod(), buyer);
 
-            // Mark as COMPLETED only if not MPESA (instant payment)
-            if (!PaymentMethod.MPESA.equals(purchase.getPaymentMethod())) {
-                purchase.setStatus(Status.COMPLETED);
-                purchasesRepository.save(purchase);
-            }
+            // DO NOT mark as COMPLETED here for MPESA
+            // Callback will handle COMPLETED + points
+
         } catch (Exception e) {
             purchase.setStatus(Status.CANCELLED);
             purchasesRepository.save(purchase);
+            logger.error("Payment initiation failed for purchase {}", purchase.getId(), e);
             throw new RuntimeException("Payment failed: " + e.getMessage(), e);
         }
 
         sendPurchaseConfirmation(purchase, dto.getPurchaseEmail());
-        logger.info("Purchase {} created for {} tickets", purchase.getId(), totalQuantity);
+        logger.info("Purchase {} created (PENDING) for {} tickets. Awaiting MPESA callback.", purchase.getId(), totalQuantity);
         return purchase;
     }
 
+    private void generateQrForTicket(TicketPurchase tp) {
+        String qrText = tp.getQrCodeUid();
+        try {
+            byte[] png = QrCodeGenerator.generatePng(qrText, 400, 400);
+            tp.setQrCodeImage(png);
+            ticketPurchaseRepository.save(tp);
+            logger.info("QR generated for ticket_purchase_id={} ({} bytes)", tp.getId(), png.length);
+        } catch (WriterException | IOException e) {
+            logger.error("QR generation failed for ticket_purchase_id={}", tp.getId(), e);
+            // Non-critical – continue
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  Validation, Payment, Email
+    // ──────────────────────────────────────────────────────────────
     private void validateTicketsAvailability(Long eventId, List<TicketSelectDTO> selectedTickets) {
         ZoneOffset eat = ZoneOffset.of("+03:00");
-        OffsetDateTime now = OffsetDateTime.now(eat);  // EAT TIME
+        OffsetDateTime now = OffsetDateTime.now(eat);
 
         for (TicketSelectDTO sel : selectedTickets) {
             Ticket ticket = ticketRepository
@@ -145,14 +167,10 @@ public class PurchaseService {
 
             OffsetDateTime start = ticket.getSaleStartDate()
                     .atTime(ticket.getSaleStartTime())
-                    .atOffset(eat);  // EAT
-
+                    .atOffset(eat);
             OffsetDateTime end = ticket.getSaleEndDate()
                     .atTime(ticket.getSaleEndTime() != null ? ticket.getSaleEndTime() : LocalTime.MAX)
-                    .atOffset(eat);  // EAT
-
-            logger.info("Checking sale: {} | Now: {} | Start: {} | End: {}",
-                    sel.getTicketType(), now, start, end);
+                    .atOffset(eat);
 
             if (now.isBefore(start) || now.isAfter(end)) {
                 throw new SalePeriodExpiredException(
@@ -171,63 +189,63 @@ public class PurchaseService {
         PaymentMethod pm = PaymentMethod.valueOf(method.toUpperCase());
         double amount = purchase.getTotalAmount();
 
-        switch (pm) {
-            case MPESA -> {
-                if (purchase.getPhoneNumber() == null || purchase.getPhoneNumber().isBlank()) {
-                    throw new InvalidPaymentException("Phone number is required for MPESA");
-                }
-                if (!purchase.getPhoneNumber().matches("^254[17]\\d{8}$")) {
-                    throw new InvalidPaymentException("Invalid phone format. Use 2547XXXXXXXX");
-                }
-
-                String accountRef = "TICKET-" + purchase.getId();
-                String transactionDesc = "Event Ticket Payment #" + purchase.getId();
-
-                String result = mpesaService.initiateStkPush(
-                        purchase.getPhoneNumber(),
-                        (int) Math.round(amount),
-                        accountRef,
-                        transactionDesc
-                );
-
-                logger.info("STK Push result: {}", result);
-
-                if (!result.startsWith("Success:")) {
-                    throw new InvalidPaymentException("STK Push failed: " + result);
-                }
-
-                // Extract CheckoutRequestID
-                String checkoutId = result.substring(result.indexOf("Checkout ID: ") + 13).trim();
-                purchase.setTransactionRef(checkoutId);
-                purchasesRepository.save(purchase);
-
-                logger.info("STK Push sent. Awaiting callback for Checkout ID: {}", checkoutId);
-            }
-
-            case WALLET -> {
-                Wallet wallet = buyer.getWallet();
-                if (wallet == null) throw new InvalidPaymentException("No wallet linked");
-                if (wallet.getBalance() < amount) {
-                    throw new InvalidPaymentException(
-                            String.format("Insufficient wallet balance: %.2f < %.2f", wallet.getBalance(), amount)
-                    );
-                }
-                wallet.setBalance(wallet.getBalance() - amount);
-                walletRepository.save(wallet);
-            }
-
-            default -> throw new IllegalArgumentException("Unsupported payment method: " + method);
+        if (pm != PaymentMethod.MPESA) {
+            throw new IllegalArgumentException("Only MPESA is supported at the moment");
         }
 
-        logger.info("Payment processed for purchase {} via {}", purchase.getId(), pm);
+        if (purchase.getPhoneNumber() == null || purchase.getPhoneNumber().isBlank()) {
+            throw new InvalidPaymentException("Phone number is required for MPESA");
+        }
+        if (!purchase.getPhoneNumber().matches("^254[17]\\d{8}$")) {
+            throw new InvalidPaymentException("Invalid phone format. Use 2547XXXXXXXX");
+        }
+
+        String accountRef = "TICKET-" + purchase.getId();
+        String transactionDesc = "Event Ticket Payment #" + purchase.getId();
+
+        String result = mpesaService.initiateStkPush(
+                purchase.getPhoneNumber(),
+                (int) Math.round(amount),
+                accountRef,
+                transactionDesc
+        );
+
+        logger.info("STK Push result: {}", result);
+
+        if (!result.startsWith("Success:")) {
+            throw new InvalidPaymentException("STK Push failed: " + result);
+        }
+
+        String checkoutId = result.substring(result.indexOf("Checkout ID: ") + 13).trim();
+        purchase.setTransactionRef(checkoutId);
+        purchasesRepository.save(purchase);
+
+        logger.info("STK Push sent. Awaiting callback for Checkout ID: {}", checkoutId);
     }
 
     private void sendPurchaseConfirmation(Purchases purchase, String email) {
-        logger.info("Email confirmation sent to {} for purchase {}", email, purchase.getId());
-        // TODO: Implement real email with QR codes
+        logger.info("=== FUNFLARE TICKET CONFIRMATION ===");
+        logger.info("To: {}", email);
+        logger.info("Purchase ID: {}", purchase.getId());
+        logger.info("Total: KES {}", purchase.getTotalAmount());
+        logger.info("Status: {}", purchase.getStatus());
+
+        List<TicketPurchase> tickets = ticketPurchaseRepository.findByPurchaseId(purchase.getId());
+        for (int i = 0; i < tickets.size(); i++) {
+            TicketPurchase tp = tickets.get(i);
+            logger.info("Ticket {}: {} | QR UID: {} | PNG {} bytes",
+                    i + 1,
+                    tp.getTicket().getType(),
+                    tp.getQrCodeUid(),
+                    tp.getQrCodeImage() != null ? tp.getQrCodeImage().length : 0);
+        }
+        logger.info("=== END EMAIL ===");
+        // TODO: Real email with PNG attachments
     }
 
-    // Custom Exceptions
+    // ──────────────────────────────────────────────────────────────
+    //  Custom Exceptions
+    // ──────────────────────────────────────────────────────────────
     public static class InsufficientStockException extends RuntimeException {
         public InsufficientStockException(String message) { super(message); }
     }

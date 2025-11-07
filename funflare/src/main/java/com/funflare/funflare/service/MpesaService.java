@@ -25,11 +25,7 @@ public class MpesaService {
     @Autowired
     private MpesaConfig mpesaConfig;
 
-    /**
-     * Generate OAuth token for M-Pesa API (uses GET as per Daraja docs).
-     * Tokens expire in ~1 hour; consider caching with @Cacheable.
-     */
-    public String generateToken() throws IOException {
+      public String generateToken() throws IOException {
         String credentials = mpesaConfig.getConsumerKey() + ":" + mpesaConfig.getConsumerSecret();
         String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
 

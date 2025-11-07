@@ -32,7 +32,7 @@ public class TicketPurchase {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "purchase_id", nullable = false)
     @NotNull
-    private Purchases purchases;  // FK to purchases (cascade delete)
+    private Purchases purchase;  // FK to purchases (cascade delete)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id", nullable = false)
@@ -73,11 +73,15 @@ public class TicketPurchase {
     @NotNull
     private OffsetDateTime updatedAt = OffsetDateTime.now();
 
+    // Add near other columns
+    @Column(name = "qr_code_image")
+    private byte[] qrCodeImage;
+
     // Constructors
     public TicketPurchase() {}
 
     public TicketPurchase(Purchases purchases, Ticket ticket, Double ticketPrice) {
-        this.purchases = purchases;
+        this.purchase = purchases;
         this.ticket = ticket;
         this.ticketPrice = ticketPrice;
     }
@@ -98,11 +102,11 @@ public class TicketPurchase {
     }
 
     public Purchases getPurchase() {
-        return purchases;
+        return purchase;
     }
 
     public void setPurchase(Purchases purchase) {
-        this.purchases = purchase;
+        this.purchase = purchase;
     }
 
     public Ticket getTicket() {
@@ -175,5 +179,21 @@ public class TicketPurchase {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public byte[] getQrCodeImage() {
+        return qrCodeImage;
+    }
+
+    public void setQrCodeImage(byte[] qrCodeImage) {
+        this.qrCodeImage = qrCodeImage;
+    }
+
+    public Purchases getPurchases() {
+        return purchase;
+    }
+
+    public void setPurchases(Purchases purchases) {
+        this.purchase = purchases;
     }
 }

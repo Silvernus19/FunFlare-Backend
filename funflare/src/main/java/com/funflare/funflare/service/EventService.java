@@ -110,7 +110,7 @@ public class EventService {
         return new EventsTicketsDTO(event, tickets);
     }
 
-    // NEW: PUBLIC EVENTS FOR BUYERS
+    // public event retrieval for buyers
     @Transactional(readOnly = true)
     public List<EventBuyerDTO> getPublicEvents() {
         // REMOVED: status + date filtering

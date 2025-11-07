@@ -41,7 +41,7 @@ public class EventController {
         this.objectMapper = objectMapper;
     }
 
-    // CREATE EVENT
+    // event creation
     @PostMapping(value = "/create/event", consumes = "multipart/form-data")
     public ResponseEntity<?> createEvent(
             @RequestPart("dto") String dtoJson,
@@ -51,7 +51,7 @@ public class EventController {
 
         try {
             EventCreateDTO dto = objectMapper.readValue(dtoJson, EventCreateDTO.class);
-            BindingResult bindingResult = validateDto(dto);  // Now resolved
+            BindingResult bindingResult = validateDto(dto);
 
             if (bindingResult.hasErrors()) {
                 String errors = bindingResult.getFieldErrors().stream()
@@ -158,7 +158,7 @@ public class EventController {
         }
     }
 
-    // BUYER: PUBLIC EVENTS
+    // PUBLIC EVENTS
     @GetMapping("/public")
     public ResponseEntity<?> getPublicEvents() {
         try {
@@ -172,7 +172,7 @@ public class EventController {
         }
     }
 
-    // FIXED: validateDto() METHOD
+
     private BindingResult validateDto(EventCreateDTO dto) {
         jakarta.validation.Validator validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
         Set<ConstraintViolation<EventCreateDTO>> violations = validator.validate(dto);
