@@ -1,3 +1,4 @@
+// src/main/java/com/funflare/funflare/dto/PurchaseCreateDTO.java
 package com.funflare.funflare.dto;
 
 import com.funflare.funflare.model.Ticket;
@@ -14,53 +15,64 @@ public class PurchaseCreateDTO {
 
     @Valid
     @NotEmpty(message = "At least one ticket type must be selected")
+    @Size(min = 1, message = "You must select at least one ticket")
     private List<TicketSelectDTO> selectedTickets;
 
     @NotNull(message = "Payment method is required")
-    @NotBlank(message = "Payment method cannot be empty")
-    @Size(max = 20, message = "Payment method too long")
-    private String paymentMethod;
-
-    @NotNull(message = "Purchase email is required")
-    @NotBlank(message = "Purchase email cannot be empty")
-    @Email(message = "Invalid email format")
+    @Pattern(regexp = "MPESA", message = "Only MPESA is supported")
+    private String paymentMethod = "MPESA";
+//
+//    @NotNull(message = "Email is required")
+    @Email(message = "Please enter a valid email")
     @Size(max = 255, message = "Email too long")
     private String purchaseEmail;
 
-    @Size(max = 20, message = "Phone number too long")
+    // FIXED: REMOVED @NotBlank — IT WAS KILLING YOUR PHONE VALIDATION
+//    @NotNull(message = "Phone number is required")
+    @Pattern(
+            regexp = "^254[71][0-9]{8}$",
+            message = "Phone must be in format 2547XXXXXXXXX (Kenyan MPESA number)"
+    )
+    @Size(min = 12, max = 12, message = "Phone must be exactly 12 digits starting with 254")
     private String phoneNumber;
 
-    @Size(max = 255, message = "Guest name too long")
+//    @NotNull(message = "Name is required")
+    @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
     private String guestName;
 
     // NESTED DTO
     public static class TicketSelectDTO {
-        @NotNull(message = "Ticket type is required")
-        @NotBlank(message = "Ticket type cannot be empty")
-        @Size(max = 20, message = "Ticket type too long")
-        private String ticketType;  // "EARLY_BIRD", "VIP"
+
+        @NotBlank(message = "Ticket type is required")
+        @Pattern(
+                regexp = "^(EARLY_BIRD|ADVANCE|REGULAR|VIP|VVIP|PLATINUM)$",
+                message = "Invalid ticket type"
+        )
+        private String ticketType;
 
         @NotNull(message = "Quantity is required")
-        @Min(value = 1, message = "Quantity must be at least 1")
+        @Min(value = 1)
+        @Max(value = 50)
         private Integer quantity;
 
-        @NotNull(message = "Price per ticket is required")
-        @DecimalMin(value = "0.00", message = "Price cannot be negative")
+        @NotNull(message = "Price is required")
+        @Digits(integer = 10, fraction = 2)
         private BigDecimal price;
 
-        // CONVERT String → Enum
         public Ticket.Type getTicketTypeEnum() {
             if (ticketType == null || ticketType.isBlank()) {
-                throw new IllegalArgumentException("Ticket type is required");
+                throw new IllegalArgumentException("Ticket type cannot be null or empty");
             }
             try {
-                return Ticket.Type.valueOf(ticketType.toUpperCase());
+                return Ticket.Type.valueOf(ticketType.trim().toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid ticket type: " + ticketType + ". Use: EARLY_BIRD, ADVANCE, VIP");
+                throw new IllegalArgumentException(
+                        "Invalid ticket type: '" + ticketType + "'. Valid: EARLY_BIRD, ADVANCE, REGULAR, VIP, VVIP, PLATINUM"
+                );
             }
         }
 
-        // Standard getters/setters
+        // Getters & Setters
         public String getTicketType() { return ticketType; }
         public void setTicketType(String ticketType) { this.ticketType = ticketType; }
 
@@ -71,7 +83,7 @@ public class PurchaseCreateDTO {
         public void setPrice(BigDecimal price) { this.price = price; }
     }
 
-    // Getters and Setters
+    // GETTERS & SETTERS
     public Long getEventId() { return eventId; }
     public void setEventId(Long eventId) { this.eventId = eventId; }
 
